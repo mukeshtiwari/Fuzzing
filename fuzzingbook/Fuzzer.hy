@@ -46,8 +46,8 @@
 
 ;; However, this would generate a random garbage data, and 
 ;; and it might lead to parse error 
-(fuzz-unix-command "bc")
-(fuzz-bc "bc")
+;;(fuzz-unix-command "bc")
+;;(fuzz-bc "bc")
 
 
 (defn fuzz-unix-from-file [command]
@@ -73,7 +73,7 @@
       (print (list strerror)))
   
 
-(fuzz-unix-from-file "bc")
+;;(fuzz-unix-from-file "bc")
 
   
 (defn write-c-program []
@@ -96,20 +96,32 @@
       return val; 
       }")))
 
-(write-c-program)
+;;(write-c-program)
 
- ;; heart bleed simulation
-
- (setv secrets (+ "<space for reply>" (fuzzer 100) "<secret-certificate>" (fuzzer 100)
-                  "<secret-key>" (fuzzer 100) "<other-secrets>"))
+;; heart beat simulation
+(setv secrets (+ "<space for reply>" (fuzzer 100) "<secret-certificate>" (fuzzer 100)
+                 "<secret-key>" (fuzzer 100) "<other-secrets>"))
 
 (setv uninitialized-memory-marker "deadbeef")
 
+;; Tail call optimization
 (defn append-secret-with-uninitialized-memory [secr uninitialized]
-  (loop [[acc ""]]
+  (loop [[acc secr]]
     (cond 
-     [(> (len secr) 2048) secr]
-     [True (append-secret-with-uninitialized-memory (+ secr uninitialized) uninitialized)])))
+      [(> (len acc) 2048) secr]
+      [True (recur (+ acc uninitialized))])))
 
-;; it's so slow
+
 (setv all-memory (append-secret-with-uninitialized-memory secrets uninitialized-memory-marker))
+
+;(print all-memory)
+;(print (list (+ "hello" (str (drop 10 all-memory)))))
+
+(defn heart-beat [reply length memory]
+  (setv mem (+ reply (str (drop (len reply) memory))))
+  (take length mem))
+
+(print (list (heart-beat "potato" 6 all-memory)))
+(print (list (heart-beat "bird" 4 all-memory)))
+(print (list (heart-beat "bird" 500 all-memory)))
+
